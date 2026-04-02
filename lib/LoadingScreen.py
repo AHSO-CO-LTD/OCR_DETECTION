@@ -179,11 +179,11 @@ class CheckerThread(QThread):
             # Load PLC config
             config = _load_db_config()
             protocol_type = config.get("plc", {}).get("protocol", "modbus_tcp")
-            host = config.get("plc", {}).get("host", "192.168.3.250")
-            port = int(config.get("plc", {}).get("port", 502))
 
-            # Try Modbus TCP connection
+            # Check protocol type first to avoid port conversion errors for non-TCP protocols
             if protocol_type in ["modbus_tcp", "TCP"]:
+                host = config.get("plc", {}).get("host", "192.168.3.250")
+                port = int(config.get("plc", {}).get("port", 502))
                 from pymodbus.client import ModbusTcpClient
 
                 client = ModbusTcpClient(host=host, port=port, timeout=10)
@@ -289,17 +289,11 @@ class LoadingScreen(QWidget):
         separator.setFrameShadow(QFrame.Sunken)
         main_layout.addWidget(separator)
 
-        # Check items
-        self.check_items = {
-            "Hardware Dongle": self._create_check_item("Hardware Dongle"),
-            "Config File": self._create_check_item("Config File"),
-            "Database": self._create_check_item("Database"),
-            "Camera": self._create_check_item("Camera"),
-            "PLC": self._create_check_item("PLC"),
-        }
-
-        for component, item_widget in self.check_items.items():
-            main_layout.addWidget(item_widget)
+        # Check items - initialize dict and add containers to layout
+        self.check_items = {}
+        for name in ["Hardware Dongle", "Config File", "Database", "Camera", "PLC"]:
+            container = self._create_check_item(name)
+            main_layout.addWidget(container)
 
         # Progress bar
         self.progress_bar = QProgressBar()
@@ -413,7 +407,7 @@ class LoadingScreen(QWidget):
         if self.checker_thread is not None:
             try:
                 self.checker_thread.quit()
-                self.checker_thread.wait(timeout=5000)  # 5 second timeout
+                self.checker_thread.wait(5000)  # 5 second timeout
             except Exception as e:
                 logger.warning(f"Failed to cleanup previous thread: {e}")
             finally:
@@ -443,7 +437,7 @@ class LoadingScreen(QWidget):
         if self.checker_thread is not None:
             try:
                 self.checker_thread.quit()
-                self.checker_thread.wait(timeout=5000)
+                self.checker_thread.wait(5000)
             except Exception as e:
                 logger.warning(f"Error closing thread: {e}")
         super().closeEvent(event)

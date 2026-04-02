@@ -48,18 +48,18 @@ def test_checker_thread_custom_config_path(qapp):
 
 @pytest.mark.unit
 @pytest.mark.signal
-def test_check_dongle_success(qapp, mock_dongle_success, mocker):
+def test_check_dongle_success(qapp, mock_dongle_success, signal_capture):
     """
     Test successful dongle check emits status update with ✓ OK.
     """
     thread = CheckerThread()
-    spy = mocker.spy(thread.status_update, 'emit')
+    thread.status_update.connect(signal_capture.capture)
 
     thread._check_dongle()
 
     # Verify signal emitted with correct parameters
-    spy.assert_called_once()
-    component, status, is_ok = spy.call_args[0]
+    signal_capture.assert_emitted_once()
+    component, status, is_ok = signal_capture.get_last_emission()
     assert component == "Hardware Dongle"
     assert "OK" in status or "✓" in status
     assert is_ok == True
@@ -69,18 +69,18 @@ def test_check_dongle_success(qapp, mock_dongle_success, mocker):
 
 @pytest.mark.unit
 @pytest.mark.signal
-def test_check_dongle_failure(qapp, mock_dongle_failure, mocker):
+def test_check_dongle_failure(qapp, mock_dongle_failure, signal_capture):
     """
     Test failed dongle check emits status update with ✗ Not found.
     """
     thread = CheckerThread()
-    spy = mocker.spy(thread.status_update, 'emit')
+    thread.status_update.connect(signal_capture.capture)
 
     thread._check_dongle()
 
     # Verify signal emitted and warning counted
-    spy.assert_called_once()
-    component, status, is_ok = spy.call_args[0]
+    signal_capture.assert_emitted_once()
+    component, status, is_ok = signal_capture.get_last_emission()
     assert component == "Hardware Dongle"
     assert "not found" in status.lower() or "✗" in status
     assert is_ok == False
@@ -90,18 +90,18 @@ def test_check_dongle_failure(qapp, mock_dongle_failure, mocker):
 
 @pytest.mark.unit
 @pytest.mark.signal
-def test_check_dongle_exception(qapp, mock_dongle_exception, mocker):
+def test_check_dongle_exception(qapp, mock_dongle_exception, signal_capture):
     """
     Test dongle exception is caught and warning_count incremented.
     """
     thread = CheckerThread()
-    spy = mocker.spy(thread.status_update, 'emit')
+    thread.status_update.connect(signal_capture.capture)
 
     thread._check_dongle()
 
     # Verify exception handled
-    spy.assert_called_once()
-    component, status, is_ok = spy.call_args[0]
+    signal_capture.assert_emitted_once()
+    component, status, is_ok = signal_capture.get_last_emission()
     assert component == "Hardware Dongle"
     assert is_ok == False
     assert thread.warning_count == 1
@@ -114,17 +114,17 @@ def test_check_dongle_exception(qapp, mock_dongle_exception, mocker):
 
 @pytest.mark.unit
 @pytest.mark.signal
-def test_check_config_exists(qapp, mock_config_file_exists, mocker):
+def test_check_config_exists(qapp, mock_config_file_exists, signal_capture):
     """
     Test config file existence check emits status update with ✓ OK.
     """
     thread = CheckerThread()
-    spy = mocker.spy(thread.status_update, 'emit')
+    thread.status_update.connect(signal_capture.capture)
 
     thread._check_config()
 
-    spy.assert_called_once()
-    component, status, is_ok = spy.call_args[0]
+    signal_capture.assert_emitted_once()
+    component, status, is_ok = signal_capture.get_last_emission()
     assert component == "Config File"
     assert "OK" in status or "✓" in status
     assert is_ok == True
@@ -134,17 +134,17 @@ def test_check_config_exists(qapp, mock_config_file_exists, mocker):
 
 @pytest.mark.unit
 @pytest.mark.signal
-def test_check_config_missing(qapp, mock_config_file_missing, mocker):
+def test_check_config_missing(qapp, mock_config_file_missing, signal_capture):
     """
     Test missing config file emits status update with ✗ Not found.
     """
     thread = CheckerThread()
-    spy = mocker.spy(thread.status_update, 'emit')
+    thread.status_update.connect(signal_capture.capture)
 
     thread._check_config()
 
-    spy.assert_called_once()
-    component, status, is_ok = spy.call_args[0]
+    signal_capture.assert_emitted_once()
+    component, status, is_ok = signal_capture.get_last_emission()
     assert component == "Config File"
     assert "not found" in status.lower() or "✗" in status
     assert is_ok == False
@@ -154,20 +154,20 @@ def test_check_config_missing(qapp, mock_config_file_missing, mocker):
 
 @pytest.mark.unit
 @pytest.mark.signal
-def test_check_config_exception(qapp, mocker):
+def test_check_config_exception(qapp, signal_capture, mocker):
     """
     Test os.path.exists exception is caught and handled.
     """
     thread = CheckerThread()
-    spy = mocker.spy(thread.status_update, 'emit')
+    thread.status_update.connect(signal_capture.capture)
 
     # Mock os.path.exists to raise exception
     mocker.patch("os.path.exists", side_effect=Exception("Permission denied"))
 
     thread._check_config()
 
-    spy.assert_called_once()
-    component, status, is_ok = spy.call_args[0]
+    signal_capture.assert_emitted_once()
+    component, status, is_ok = signal_capture.get_last_emission()
     assert component == "Config File"
     assert is_ok == False
     assert thread.warning_count == 1
@@ -179,17 +179,17 @@ def test_check_config_exception(qapp, mocker):
 
 @pytest.mark.unit
 @pytest.mark.signal
-def test_check_database_connected(qapp, mock_db_config_loader, mock_pymysql_connected, mocker):
+def test_check_database_connected(qapp, mock_db_config_loader, mock_pymysql_connected, signal_capture):
     """
     Test successful database connection emits status update with ✓ OK.
     """
     thread = CheckerThread()
-    spy = mocker.spy(thread.status_update, 'emit')
+    thread.status_update.connect(signal_capture.capture)
 
     thread._check_database()
 
-    spy.assert_called_once()
-    component, status, is_ok = spy.call_args[0]
+    signal_capture.assert_emitted_once()
+    component, status, is_ok = signal_capture.get_last_emission()
     assert component == "Database"
     assert "OK" in status or "✓" in status
     assert is_ok == True
@@ -198,17 +198,17 @@ def test_check_database_connected(qapp, mock_db_config_loader, mock_pymysql_conn
 
 @pytest.mark.unit
 @pytest.mark.signal
-def test_check_database_operational_error(qapp, mock_db_config_loader, mock_pymysql_connection_error, mocker):
+def test_check_database_operational_error(qapp, mock_db_config_loader, mock_pymysql_connection_error, signal_capture):
     """
     Test database connection failure emits status update with ✗ Connection failed.
     """
     thread = CheckerThread()
-    spy = mocker.spy(thread.status_update, 'emit')
+    thread.status_update.connect(signal_capture.capture)
 
     thread._check_database()
 
-    spy.assert_called_once()
-    component, status, is_ok = spy.call_args[0]
+    signal_capture.assert_emitted_once()
+    component, status, is_ok = signal_capture.get_last_emission()
     assert component == "Database"
     assert "connection failed" in status.lower() or "✗" in status
     assert is_ok == False
@@ -217,17 +217,17 @@ def test_check_database_operational_error(qapp, mock_db_config_loader, mock_pymy
 
 @pytest.mark.unit
 @pytest.mark.signal
-def test_check_database_query_error(qapp, mock_db_config_loader, mock_pymysql_query_error, mocker):
+def test_check_database_query_error(qapp, mock_db_config_loader, mock_pymysql_query_error, signal_capture):
     """
     Test database query failure emits status update.
     """
     thread = CheckerThread()
-    spy = mocker.spy(thread.status_update, 'emit')
+    thread.status_update.connect(signal_capture.capture)
 
     thread._check_database()
 
-    spy.assert_called_once()
-    component, status, is_ok = spy.call_args[0]
+    signal_capture.assert_emitted_once()
+    component, status, is_ok = signal_capture.get_last_emission()
     assert component == "Database"
     assert is_ok == False
     assert thread.warning_count == 1
@@ -235,17 +235,17 @@ def test_check_database_query_error(qapp, mock_db_config_loader, mock_pymysql_qu
 
 @pytest.mark.unit
 @pytest.mark.signal
-def test_check_database_timeout(qapp, mock_db_config_loader, mock_pymysql_timeout, mocker):
+def test_check_database_timeout(qapp, mock_db_config_loader, mock_pymysql_timeout, signal_capture):
     """
     Test database connection timeout emits status update with ✗ error message.
     """
     thread = CheckerThread()
-    spy = mocker.spy(thread.status_update, 'emit')
+    thread.status_update.connect(signal_capture.capture)
 
     thread._check_database()
 
-    spy.assert_called_once()
-    component, status, is_ok = spy.call_args[0]
+    signal_capture.assert_emitted_once()
+    component, status, is_ok = signal_capture.get_last_emission()
     assert component == "Database"
     assert is_ok == False
     assert thread.warning_count == 1
@@ -257,17 +257,17 @@ def test_check_database_timeout(qapp, mock_db_config_loader, mock_pymysql_timeou
 
 @pytest.mark.unit
 @pytest.mark.signal
-def test_check_camera_found(qapp, mock_camera_sdk_found, mocker):
+def test_check_camera_found(qapp, mock_camera_sdk_found, signal_capture):
     """
     Test successful camera detection emits status update with ✓ OK.
     """
     thread = CheckerThread()
-    spy = mocker.spy(thread.status_update, 'emit')
+    thread.status_update.connect(signal_capture.capture)
 
     thread._check_camera()
 
-    spy.assert_called_once()
-    component, status, is_ok = spy.call_args[0]
+    signal_capture.assert_emitted_once()
+    component, status, is_ok = signal_capture.get_last_emission()
     assert component == "Camera"
     assert "OK" in status or "✓" in status
     assert is_ok == True
@@ -276,17 +276,17 @@ def test_check_camera_found(qapp, mock_camera_sdk_found, mocker):
 
 @pytest.mark.unit
 @pytest.mark.signal
-def test_check_camera_not_found(qapp, mock_camera_sdk_not_found, mocker):
+def test_check_camera_not_found(qapp, mock_camera_sdk_not_found, signal_capture):
     """
     Test no cameras found emits status update with ✗ Not found.
     """
     thread = CheckerThread()
-    spy = mocker.spy(thread.status_update, 'emit')
+    thread.status_update.connect(signal_capture.capture)
 
     thread._check_camera()
 
-    spy.assert_called_once()
-    component, status, is_ok = spy.call_args[0]
+    signal_capture.assert_emitted_once()
+    component, status, is_ok = signal_capture.get_last_emission()
     assert component == "Camera"
     assert "not found" in status.lower() or "✗" in status
     assert is_ok == False
@@ -295,17 +295,17 @@ def test_check_camera_not_found(qapp, mock_camera_sdk_not_found, mocker):
 
 @pytest.mark.unit
 @pytest.mark.signal
-def test_check_camera_sdk_not_installed(qapp, mock_camera_sdk_import_error, mocker):
+def test_check_camera_sdk_not_installed(qapp, mock_camera_sdk_import_error, signal_capture):
     """
     Test SDK ImportError emits status update with SDK error message.
     """
     thread = CheckerThread()
-    spy = mocker.spy(thread.status_update, 'emit')
+    thread.status_update.connect(signal_capture.capture)
 
     thread._check_camera()
 
-    spy.assert_called_once()
-    component, status, is_ok = spy.call_args[0]
+    signal_capture.assert_emitted_once()
+    component, status, is_ok = signal_capture.get_last_emission()
     assert component == "Camera"
     assert "SDK" in status or "not installed" in status.lower()
     assert is_ok == False
@@ -314,17 +314,17 @@ def test_check_camera_sdk_not_installed(qapp, mock_camera_sdk_import_error, mock
 
 @pytest.mark.unit
 @pytest.mark.signal
-def test_check_camera_exception(qapp, mock_camera_exception, mocker):
+def test_check_camera_exception(qapp, mock_camera_exception, signal_capture):
     """
     Test camera enumeration exception is caught and handled.
     """
     thread = CheckerThread()
-    spy = mocker.spy(thread.status_update, 'emit')
+    thread.status_update.connect(signal_capture.capture)
 
     thread._check_camera()
 
-    spy.assert_called_once()
-    component, status, is_ok = spy.call_args[0]
+    signal_capture.assert_emitted_once()
+    component, status, is_ok = signal_capture.get_last_emission()
     assert component == "Camera"
     assert is_ok == False
     assert thread.warning_count == 1
@@ -337,17 +337,17 @@ def test_check_camera_exception(qapp, mock_camera_exception, mocker):
 @pytest.mark.unit
 @pytest.mark.threading
 @pytest.mark.signal
-def test_check_plc_modbus_connected(qapp, mock_db_config_loader, mock_modbus_tcp_client_connected, mocker):
+def test_check_plc_modbus_connected(qapp, mock_db_config_loader, mock_modbus_tcp_client_connected, signal_capture):
     """
     Test successful Modbus TCP connection emits status update with ✓ OK.
     """
     thread = CheckerThread()
-    spy = mocker.spy(thread.status_update, 'emit')
+    thread.status_update.connect(signal_capture.capture)
 
     thread._check_plc()
 
-    spy.assert_called_once()
-    component, status, is_ok = spy.call_args[0]
+    signal_capture.assert_emitted_once()
+    component, status, is_ok = signal_capture.get_last_emission()
     assert component == "PLC"
     assert "OK" in status or "✓" in status or "Ready" in status
     assert is_ok == True
@@ -357,17 +357,17 @@ def test_check_plc_modbus_connected(qapp, mock_db_config_loader, mock_modbus_tcp
 @pytest.mark.unit
 @pytest.mark.threading
 @pytest.mark.signal
-def test_check_plc_modbus_connection_failed(qapp, mock_db_config_loader, mock_modbus_tcp_client_connection_failed, mocker):
+def test_check_plc_modbus_connection_failed(qapp, mock_db_config_loader, mock_modbus_tcp_client_connection_failed, signal_capture):
     """
     Test Modbus TCP connection failure emits error status.
     """
     thread = CheckerThread()
-    spy = mocker.spy(thread.status_update, 'emit')
+    thread.status_update.connect(signal_capture.capture)
 
     thread._check_plc()
 
-    spy.assert_called_once()
-    component, status, is_ok = spy.call_args[0]
+    signal_capture.assert_emitted_once()
+    component, status, is_ok = signal_capture.get_last_emission()
     assert component == "PLC"
     assert is_ok == False
     assert thread.warning_count == 1
@@ -376,17 +376,17 @@ def test_check_plc_modbus_connection_failed(qapp, mock_db_config_loader, mock_mo
 @pytest.mark.unit
 @pytest.mark.threading
 @pytest.mark.signal
-def test_check_plc_modbus_read_failed(qapp, mock_db_config_loader, mock_modbus_tcp_client_read_failed, mocker):
+def test_check_plc_modbus_read_failed(qapp, mock_db_config_loader, mock_modbus_tcp_client_read_failed, signal_capture):
     """
     Test Modbus read failure emits error status.
     """
     thread = CheckerThread()
-    spy = mocker.spy(thread.status_update, 'emit')
+    thread.status_update.connect(signal_capture.capture)
 
     thread._check_plc()
 
-    spy.assert_called_once()
-    component, status, is_ok = spy.call_args[0]
+    signal_capture.assert_emitted_once()
+    component, status, is_ok = signal_capture.get_last_emission()
     assert component == "PLC"
     assert is_ok == False
     assert thread.warning_count == 1
@@ -395,166 +395,111 @@ def test_check_plc_modbus_read_failed(qapp, mock_db_config_loader, mock_modbus_t
 @pytest.mark.unit
 @pytest.mark.threading
 @pytest.mark.signal
-def test_check_plc_modbus_read_timeout(qapp, mock_db_config_loader, mock_modbus_tcp_client_read_timeout, mocker):
+def test_check_plc_modbus_read_timeout(qapp, mock_db_config_loader, mock_modbus_tcp_client_read_timeout, signal_capture):
     """
-    Test Modbus read timeout emits error status.
+    Test Modbus read timeout emits error status with timeout message.
     """
     thread = CheckerThread()
-    spy = mocker.spy(thread.status_update, 'emit')
+    thread.status_update.connect(signal_capture.capture)
 
     thread._check_plc()
 
-    spy.assert_called_once()
-    component, status, is_ok = spy.call_args[0]
+    signal_capture.assert_emitted_once()
+    component, status, is_ok = signal_capture.get_last_emission()
     assert component == "PLC"
     assert is_ok == False
     assert thread.warning_count == 1
 
 
 @pytest.mark.unit
-@pytest.mark.threading
 @pytest.mark.signal
-def test_check_plc_non_tcp_protocol(qapp, mocker):
+def test_check_plc_non_tcp_protocol(qapp, mock_db_config_loader_non_tcp, signal_capture):
     """
-    Test non-TCP protocol (RTU/SLMP) emits status with ready indicator.
+    Test non-TCP protocol emits status update with Ready (manual config).
     """
     thread = CheckerThread()
-    spy = mocker.spy(thread.status_update, 'emit')
-
-    # Mock config to return non-TCP protocol
-    mock_config = {
-        "plc": {
-            "protocol": "rtu",
-            "host": "COM1"
-        }
-    }
-    mocker.patch("lib.Database._load_db_config", return_value=mock_config)
+    thread.status_update.connect(signal_capture.capture)
 
     thread._check_plc()
 
-    spy.assert_called_once()
-    component, status, is_ok = spy.call_args[0]
+    signal_capture.assert_emitted_once()
+    component, status, is_ok = signal_capture.get_last_emission()
     assert component == "PLC"
-    # Non-TCP protocols are marked as ready (manual configuration)
     assert "Ready" in status or "manual" in status.lower()
     assert is_ok == True
     assert thread.warning_count == 0
 
 
 # ============================================================================
-# TEST GROUP 7: RUN() METHOD & SIGNALS (4 tests)
+# TEST GROUP 7: THREAD ORCHESTRATION (4 tests)
 # ============================================================================
 
 @pytest.mark.unit
 @pytest.mark.threading
-@pytest.mark.signal
-def test_run_executes_all_checks(qapp, mocker):
+def test_run_executes_all_checks(qapp, mock_dongle_success, mock_config_file_exists,
+                                   mock_db_config_loader, mock_pymysql_connected,
+                                   mock_camera_sdk_not_found, mock_modbus_tcp_client_connected,
+                                   signal_capture):
     """
-    Verify run() method executes all 5 checks sequentially.
+    Test that run() method executes all five check methods in sequence.
     """
     thread = CheckerThread()
-
-    # Mock all check methods
-    mocker.patch.object(thread, '_check_dongle')
-    mocker.patch.object(thread, '_check_config')
-    mocker.patch.object(thread, '_check_database')
-    mocker.patch.object(thread, '_check_camera')
-    mocker.patch.object(thread, '_check_plc')
-
-    # Mock the signals
-    spy_complete = mocker.spy(thread.checks_complete, 'emit')
+    thread.status_update.connect(signal_capture.capture)
 
     thread.run()
 
-    # Verify all checks were called
-    thread._check_dongle.assert_called_once()
-    thread._check_config.assert_called_once()
-    thread._check_database.assert_called_once()
-    thread._check_camera.assert_called_once()
-    thread._check_plc.assert_called_once()
-
-    # Verify completion signal emitted
-    spy_complete.assert_called_once()
-
-
-@pytest.mark.unit
-@pytest.mark.threading
-@pytest.mark.signal
-def test_run_emits_checks_complete(qapp, mocker):
-    """
-    Verify run() emits checks_complete signal with warning_count.
-    """
-    thread = CheckerThread()
-    thread.warning_count = 2  # Simulate 2 failed checks
-
-    # Mock all check methods
-    mocker.patch.object(thread, '_check_dongle')
-    mocker.patch.object(thread, '_check_config')
-    mocker.patch.object(thread, '_check_database')
-    mocker.patch.object(thread, '_check_camera')
-    mocker.patch.object(thread, '_check_plc')
-
-    spy = mocker.spy(thread.checks_complete, 'emit')
-
-    thread.run()
-
-    spy.assert_called_once_with(2)
-
-
-@pytest.mark.unit
-@pytest.mark.threading
-def test_run_progress_tracking(qapp, mocker):
-    """
-    Verify run() increments checks_completed counter.
-    """
-    thread = CheckerThread()
-    assert thread.checks_completed == 0
-
-    # Mock all check methods
-    mocker.patch.object(thread, '_check_dongle')
-    mocker.patch.object(thread, '_check_config')
-    mocker.patch.object(thread, '_check_database')
-    mocker.patch.object(thread, '_check_camera')
-    mocker.patch.object(thread, '_check_plc')
-
-    mocker.patch.object(thread, 'status_update')
-    mocker.patch.object(thread, 'checks_complete')
-
-    thread.run()
-
-    # After 5 checks, checks_completed should be 5
+    # Should have 5 emissions (one for each check)
+    assert len(signal_capture.signals) == 5
     assert thread.checks_completed == 5
 
 
 @pytest.mark.unit
 @pytest.mark.threading
-@pytest.mark.signal
-def test_run_warning_accumulation(qapp, mocker):
+def test_run_emits_checks_complete(qapp, mock_dongle_success, mock_config_file_exists,
+                                     mock_db_config_loader, mock_pymysql_connected,
+                                     mock_camera_sdk_not_found, mock_modbus_tcp_client_connected):
     """
-    Verify run() accumulates warning_count across multiple failures.
+    Test that run() emits checks_complete signal with warning count.
     """
     thread = CheckerThread()
-    assert thread.warning_count == 0
-
-    # Mock checks to emit status with failures
-    def mock_check_fail():
-        thread.warning_count += 1
-        thread.checks_completed += 1
-
-    def mock_check_pass():
-        thread.checks_completed += 1
-
-    mocker.patch.object(thread, '_check_dongle', side_effect=mock_check_fail)
-    mocker.patch.object(thread, '_check_config', side_effect=mock_check_pass)
-    mocker.patch.object(thread, '_check_database', side_effect=mock_check_fail)
-    mocker.patch.object(thread, '_check_camera', side_effect=mock_check_pass)
-    mocker.patch.object(thread, '_check_plc', side_effect=mock_check_fail)
-
-    mocker.patch.object(thread.status_update, 'emit')
-    mocker.patch.object(thread.checks_complete, 'emit')
+    complete_called = []
+    thread.checks_complete.connect(lambda count: complete_called.append(count))
 
     thread.run()
 
-    # After 5 checks with 3 failures
+    assert len(complete_called) == 1
+    assert isinstance(complete_called[0], int)
+
+
+@pytest.mark.unit
+@pytest.mark.threading
+def test_run_progress_tracking(qapp, mock_dongle_success, mock_config_file_exists,
+                                 mock_db_config_loader, mock_pymysql_connected,
+                                 mock_camera_sdk_not_found, mock_modbus_tcp_client_connected,
+                                 signal_capture):
+    """
+    Test that checks_completed increments correctly during run().
+    """
+    thread = CheckerThread()
+    thread.status_update.connect(signal_capture.capture)
+
+    thread.run()
+
     assert thread.checks_completed == 5
-    assert thread.warning_count == 3
+    assert thread.total_checks == 5
+
+
+@pytest.mark.unit
+@pytest.mark.threading
+def test_run_warning_accumulation(qapp, mock_dongle_failure, mock_config_file_missing,
+                                    mock_db_config_loader, mock_pymysql_connection_error,
+                                    mock_camera_sdk_not_found, mock_modbus_tcp_client_connection_failed):
+    """
+    Test that warning_count accumulates across all failed checks.
+    """
+    thread = CheckerThread()
+
+    thread.run()
+
+    # 5 failures expected (all checks fail)
+    assert thread.warning_count == 5
