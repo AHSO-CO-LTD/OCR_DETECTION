@@ -1,0 +1,5 @@
+train: E:/Python_project/Segmentation_Software_Training_V3.1/dataset/train/images
+test:  E:/Python_project/Segmentation_Software_Training_V3.1/dataset/test/images
+val:   E:/Python_project/Segmentation_Software_Training_V3.1/dataset/val/images
+nc: 1
+names: ['Object']

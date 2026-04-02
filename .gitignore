@@ -1,0 +1,32 @@
+# Config chứa credentials — KHÔNG commit
+config.yaml
+
+# Python cache
+__pycache__/
+*.py[cod]
+*.pyo
+
+# Build artifacts
+build/
+dist/
+*.spec
+lib/build/
+
+# Cython compiled (chỉ giữ trong module/ khi release)
+lib/*.pyd
+lib/*.c
+lib/*.so
+
+# Model weights (dùng Git LFS hoặc lưu riêng)
+*.pt
+*.pth
+*.th
+
+# Dongle log
+lib/dongle_log.txt
+
+# Misc
+*.log
+.DS_Store
+Thumbs.db
+Icon

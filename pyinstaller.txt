@@ -1,0 +1,16 @@
+pyinstaller --noconfirm --onedir --windowed ^
+  --collect-submodules torch ^
+  --collect-submodules torchvision ^
+  --collect-submodules torchinfo ^
+  --collect-submodules sklearn ^
+  --collect-submodules ultralytics ^
+  --collect-submodules cvzone ^
+  --collect-submodules pypylon ^
+  --collect-submodules PIL ^
+  --hidden-import cProfile ^
+  --hidden-import importlib.resources ^
+  --hidden-import pyqtgraph ^
+  --icon "E:\VISION CENTER LOGO\LOGO ICON.ico" ^
+  "E:\DRB-OCR-AI\main.py"
+
+pyinstaller main.py --noconfirm --clean --onedir --name "MyApp" --collect-all torch --collect-all ultralytics --collect-all cvzone
