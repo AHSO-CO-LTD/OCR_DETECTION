@@ -14,7 +14,7 @@ from PyQt5.QtWidgets import (QGraphicsScene, QMessageBox, QGraphicsRectItem, QGr
 from PyQt5.QtGui import QImage, QPixmap, QPainter, QPen, QColor, QFont
 from PyQt5.QtCore import QTimer, QProcess, pyqtSignal
 
-from Global import signal, initialize_secure_dongle, catch_errors
+from lib.Global import signal, initialize_secure_dongle, catch_errors
 sys.path.append(os.path.abspath("RunTime_Sofware"))
 import Deep_Learning_Tool
 from Deep_Learning_Tool import OCR_DEEP_LEARNING

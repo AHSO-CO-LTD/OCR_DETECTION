@@ -23,7 +23,7 @@ from PyQt5.QtWidgets import (
 from PyQt5.QtGui import QImage, QPixmap, QPainter, QPen, QColor, QFont
 from PyQt5.QtCore import QTimer, QProcess, pyqtSignal
 
-from Global import (
+from lib.Global import (
     signal,
     global_vars,
     initialize_secure_dongle,
