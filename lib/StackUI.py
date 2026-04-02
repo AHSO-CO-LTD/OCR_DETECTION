@@ -1,9 +1,10 @@
 from PyQt5 import QtWidgets
 
-from Main_Screen import MainScreen
-from Login_Screen import LoginScreen
-from LoadingScreen import LoadingScreen
-from Global import signal
+from lib.Main_Screen import MainScreen
+from lib.Login_Screen import LoginScreen
+from lib.LoadingScreen import LoadingScreen
+from lib.Global import signal
+
 
 class StackedWidget(QtWidgets.QStackedWidget):
     def __init__(self):
@@ -20,23 +21,21 @@ class StackedWidget(QtWidgets.QStackedWidget):
         self.set_event()
 
     def set_event(self):
-        signal.switch_screen.connect(self.switch_screen)
-
-        # Loading screen → show loading and start checks
+        """Connect signals for screen transitions"""
+        # Loading screen logic: switch to loading and start checks
         signal.switch_screen.connect(self.on_switch_screen)
 
         # Loading screen complete → show main screen
         self.loading_screen.loading_complete.connect(self.show_main_screen)
 
-    def switch_screen(self, index):
-        self.setCurrentIndex(index)
-
     def on_switch_screen(self, index):
         """Handle screen switch with loading screen logic"""
-        # If switching to loading screen (index 1 from login), start checks
+        # If switching to loading screen (index 1 from login), show it and start checks
         if index == 1:
             self.setCurrentIndex(index)
             self.loading_screen.start_checks()
+        else:
+            self.setCurrentIndex(index)
 
     def show_main_screen(self):
         """Switch to main screen after loading is complete"""

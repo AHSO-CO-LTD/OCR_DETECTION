@@ -7,8 +7,8 @@ from PyQt5.uic import loadUi
 from PyQt5.QtWidgets import QMainWindow, QMessageBox, QLineEdit
 from PyQt5.QtCore import QTimer, QProcess, QTime, QDate
 
-from Global import signal, OskEventFilter, CheckPasswordMessage
-from Database import DatabaseConnection, BaseModel, User, CurrentSession, LoginAudit, check_password
+from lib.Global import signal, OskEventFilter, CheckPasswordMessage
+from lib.Database import DatabaseConnection, BaseModel, User, CurrentSession, LoginAudit, check_password
 db = DatabaseConnection()
 BaseModel.use_db(db)
 

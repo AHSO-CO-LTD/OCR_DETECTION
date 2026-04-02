@@ -13,19 +13,23 @@ User can proceed to MainScreen even with some warnings.
 """
 
 import os
-import time
+import logging
 import pymysql
 from PyQt5.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QLabel, QPushButton,
-    QProgressBar, QFrame
+    QProgressBar, QFrame, QMessageBox
 )
 from PyQt5.QtCore import (
-    Qt, QThread, pyqtSignal, QTimer, QSize
+    Qt, QThread, pyqtSignal, QTimer
 )
-from PyQt5.QtGui import QFont, QColor, QPixmap, QIcon
-from PyQt5.QtWidgets import QMessageBox
+from PyQt5.QtGui import QFont
 
 from lib.Global import signal, catch_errors
+from lib.Database import _load_db_config
+from lib.Global import initialize_secure_dongle
+
+# Configure logging
+logger = logging.getLogger(__name__)
 
 
 class CheckerThread(QThread):
@@ -67,15 +71,17 @@ class CheckerThread(QThread):
     def _check_dongle(self):
         """Check hardware dongle (HASP Sentinel)"""
         try:
-            from lib.Global import initialize_secure_dongle
             result = initialize_secure_dongle()
             if result:
                 self.status_update.emit("Hardware Dongle", "✓ OK", True)
             else:
                 self.status_update.emit("Hardware Dongle", "✗ Not found", False)
                 self.warning_count += 1
+                logger.warning("Hardware dongle not found")
         except Exception as e:
-            self.status_update.emit("Hardware Dongle", f"✗ {str(e)[:30]}", False)
+            logger.exception("Dongle check failed")
+            error_msg = str(e)[:40] if len(str(e)) > 40 else str(e)
+            self.status_update.emit("Hardware Dongle", f"✗ {error_msg}", False)
             self.warning_count += 1
         self.checks_completed += 1
         self._emit_progress()
@@ -88,8 +94,10 @@ class CheckerThread(QThread):
             else:
                 self.status_update.emit("Config File", "✗ Not found", False)
                 self.warning_count += 1
+                logger.warning(f"Config file not found: {self.config_path}")
         except Exception as e:
-            self.status_update.emit("Config File", f"✗ Error", False)
+            logger.exception("Config check failed")
+            self.status_update.emit("Config File", "✗ Error", False)
             self.warning_count += 1
         self.checks_completed += 1
         self._emit_progress()
@@ -97,37 +105,37 @@ class CheckerThread(QThread):
     def _check_database(self):
         """Check database connectivity"""
         try:
-            from lib.Database import _load_db_config
-
             # Load config
             config = _load_db_config()
 
             # Try to connect with 10-second timeout
-            conn = pymysql.connect(
-                host=config.get("host", "localhost"),
-                port=config.get("port", 3306),
-                user=config.get("user", "root"),
-                password=config.get("password", ""),
-                database=config.get("database", "DRB_Metalcore"),
-                connect_timeout=10,
-            )
+            try:
+                with pymysql.connect(
+                    host=config.get("host", "localhost"),
+                    port=config.get("port", 3306),
+                    user=config.get("user", "root"),
+                    password=config.get("password", ""),
+                    database=config.get("database", "DRB_Metalcore"),
+                    connect_timeout=10,
+                ) as conn:
+                    with conn.cursor() as cursor:
+                        cursor.execute("SELECT 1")
+                        cursor.fetchone()
 
-            # Test query
-            cursor = conn.cursor()
-            cursor.execute("SELECT 1")
-            cursor.fetchone()
-            cursor.close()
-            conn.close()
+                self.status_update.emit("Database", "✓ OK", True)
+                logger.info("Database connection successful")
 
-            self.status_update.emit("Database", "✓ OK", True)
+            except pymysql.err.OperationalError as e:
+                logger.warning(f"Database connection failed: {e}")
+                self.status_update.emit("Database", "✗ Connection failed", False)
+                self.warning_count += 1
+            except pymysql.err.DatabaseError as e:
+                logger.warning(f"Database query failed: {e}")
+                self.status_update.emit("Database", "✗ Query failed", False)
+                self.warning_count += 1
 
-        except pymysql.err.OperationalError as e:
-            self.status_update.emit("Database", "✗ Connection failed", False)
-            self.warning_count += 1
-        except pymysql.err.DatabaseError as e:
-            self.status_update.emit("Database", "✗ Query failed", False)
-            self.warning_count += 1
         except Exception as e:
+            logger.exception("Database check failed")
             error_msg = str(e)[:40] if len(str(e)) > 40 else str(e)
             self.status_update.emit("Database", f"✗ {error_msg}", False)
             self.warning_count += 1
@@ -146,15 +154,19 @@ class CheckerThread(QThread):
 
             if len(devices) > 0:
                 self.status_update.emit("Camera", "✓ OK", True)
+                logger.info(f"Camera found: {len(devices)} device(s)")
             else:
                 self.status_update.emit("Camera", "✗ Not found", False)
                 self.warning_count += 1
+                logger.warning("No camera devices found")
 
         except ImportError:
+            logger.warning("Pypylon SDK not installed")
             self.status_update.emit("Camera", "✗ SDK not installed", False)
             self.warning_count += 1
         except Exception as e:
-            error_msg = str(e)[:40]
+            logger.exception("Camera check failed")
+            error_msg = str(e)[:40] if len(str(e)) > 40 else str(e)
             self.status_update.emit("Camera", f"✗ {error_msg}", False)
             self.warning_count += 1
 
@@ -164,8 +176,6 @@ class CheckerThread(QThread):
     def _check_plc(self):
         """Check PLC connectivity"""
         try:
-            from lib.Database import _load_db_config
-
             # Load PLC config
             config = _load_db_config()
             protocol_type = config.get("plc", {}).get("protocol", "modbus_tcp")
@@ -176,39 +186,48 @@ class CheckerThread(QThread):
             if protocol_type in ["modbus_tcp", "TCP"]:
                 from pymodbus.client import ModbusTcpClient
 
-                client = ModbusTcpClient(
-                    host=host, port=port, timeout=10
-                )
-                result = client.connect()
+                client = ModbusTcpClient(host=host, port=port, timeout=10)
 
-                if result:
-                    # Try to read a register to verify connection
-                    try:
-                        response = client.read_coils(address=0, count=1)
-                        client.close()
-                        if response.isError():
-                            self.status_update.emit("PLC", "✗ Read failed", False)
+                try:
+                    result = client.connect()
+
+                    if result:
+                        # Try to read a register to verify connection
+                        try:
+                            response = client.read_coils(address=0, count=1)
+                            if response.isError():
+                                logger.warning(f"PLC read failed: {response}")
+                                self.status_update.emit("PLC", "✗ Read failed", False)
+                                self.warning_count += 1
+                            else:
+                                self.status_update.emit("PLC", "✓ OK", True)
+                                logger.info("PLC connection successful")
+                        except Exception as e:
+                            logger.warning(f"PLC read timeout: {e}")
+                            self.status_update.emit("PLC", "✗ Read timeout", False)
                             self.warning_count += 1
-                        else:
-                            self.status_update.emit("PLC", "✓ OK", True)
-                    except Exception as e:
-                        client.close()
-                        self.status_update.emit("PLC", "✗ Read timeout", False)
+                    else:
+                        logger.warning(f"PLC connection failed: {host}:{port}")
+                        self.status_update.emit("PLC", "✗ Connection failed", False)
                         self.warning_count += 1
-                else:
-                    self.status_update.emit("PLC", "✗ Connection failed", False)
-                    self.warning_count += 1
+
+                finally:
+                    # Ensure socket is always closed
+                    client.close()
 
             else:
-                # For other protocols (RTU, SLMP), just show as checking
+                # For other protocols (RTU, SLMP), just show as ready
                 # and let MainScreen handle actual connection
+                logger.info(f"PLC protocol {protocol_type} - manual config")
                 self.status_update.emit("PLC", "✓ Ready (manual config)", True)
 
         except ImportError:
+            logger.warning("Pymodbus not available")
             self.status_update.emit("PLC", "✗ Modbus not available", False)
             self.warning_count += 1
         except Exception as e:
-            error_msg = str(e)[:40]
+            logger.exception("PLC check failed")
+            error_msg = str(e)[:40] if len(str(e)) > 40 else str(e)
             self.status_update.emit("PLC", f"✗ {error_msg}", False)
             self.warning_count += 1
 
@@ -236,6 +255,9 @@ class LoadingScreen(QWidget):
         self.setWindowTitle("Loading - OCR Detection")
         self.setStyleSheet("background-color: white;")
         self.init_ui()
+
+        # Store reference to self for cleanup
+        self._cleanup_on_destroy = True
 
     def init_ui(self):
         """Initialize UI layout"""
@@ -387,10 +409,44 @@ class LoadingScreen(QWidget):
 
     def start_checks(self):
         """Start the checker thread"""
+        # Clean up previous thread if it exists
+        if self.checker_thread is not None:
+            try:
+                self.checker_thread.quit()
+                self.checker_thread.wait(timeout=5000)  # 5 second timeout
+            except Exception as e:
+                logger.warning(f"Failed to cleanup previous thread: {e}")
+            finally:
+                self.checker_thread = None
+
+        # Create and start new thread
         self.checker_thread = CheckerThread()
         self.checker_thread.status_update.connect(self.on_status_update)
         self.checker_thread.checks_complete.connect(self.on_checks_complete)
+        self.checker_thread.finished.connect(self.on_checker_finished)
         self.checker_thread.start()
+        logger.info("Starting connection checks")
+
+    def on_checker_finished(self):
+        """Called when checker thread finishes"""
+        if self.checker_thread is not None:
+            try:
+                self.checker_thread.quit()
+                self.checker_thread.wait()
+            except Exception as e:
+                logger.warning(f"Error cleaning up thread: {e}")
+            finally:
+                self.checker_thread = None
+
+    def closeEvent(self, event):
+        """Clean up thread when window closes"""
+        if self.checker_thread is not None:
+            try:
+                self.checker_thread.quit()
+                self.checker_thread.wait(timeout=5000)
+            except Exception as e:
+                logger.warning(f"Error closing thread: {e}")
+        super().closeEvent(event)
 
     def on_status_update(self, component, status, is_ok):
         """Handle status update from checker thread"""
