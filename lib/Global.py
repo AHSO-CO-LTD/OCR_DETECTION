@@ -48,6 +48,11 @@ class Signal(QObject):
     light_PLC = pyqtSignal(bool)  # MainScreen
     send_error_PLC = pyqtSignal()  # MainScreen
 
+    # LoadingScreen
+    loading_started = pyqtSignal()  # StackUI
+    loading_complete = pyqtSignal()  # StackUI → LoadingScreen → MainScreen
+    loading_status_update = pyqtSignal(str, str, bool)  # component, status, is_ok
+
 
 signal = Signal()
 

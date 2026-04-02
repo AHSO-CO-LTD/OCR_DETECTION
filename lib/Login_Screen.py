@@ -107,7 +107,7 @@ class LoginScreen(QMainWindow):
                             "ExpiresAt": expires_at
                         })
 
-                        signal.switch_screen.emit(1)  # MainScreen(1)
+                        signal.switch_screen.emit(1)  # LoadingScreen(1) → checks hardware/IO → MainScreen(2)
         except Exception as e:
             signal.show_error_message_login.emit(str(e))
 
