@@ -30,6 +30,7 @@ from lib.Global import (
     catch_errors,
     check_dongle_and_log,
 )
+from lib.ImageProcessor import ImageProcessor
 
 sys.path.append(os.path.abspath("RunTime_Sofware"))
 import Deep_Learning_Tool
@@ -71,6 +72,12 @@ class ReferenceImage(QGraphicsScene):
         self._inference_lock = threading.Lock()
         self._displaying = False  # Flag chống xử lý frame trùng lặp
 
+        # Phase 1: Frame skipping optimization
+        # Target: Reduce latency from 500ms to ~150ms (70% improvement)
+        # Strategy: Skip frames when inference slower than capture rate
+        self.image_processor = ImageProcessor(max_queue_size=3, target_fps=2)
+        self._inference_start_time = 0.0  # Track inference duration
+
     def set_state(self):
         self.current_drive()
 
@@ -86,7 +93,17 @@ class ReferenceImage(QGraphicsScene):
 
         if img is None or img.size == 0:
             signal.show_error_message_main.emit("Image crop is empty!")
+            self._displaying = False
             return
+
+        # Phase 1: Frame skipping - skip intermediate frames when inference is slow
+        if is_continuous and not self.image_processor.should_process_frame():
+            # Frame skipped - don't process AI inference
+            self._displaying = False
+            return
+
+        # Record inference start time for latency tracking
+        self._inference_start_time = time.time()
 
         self.img_crop = img.copy()
         img_crop = self.img_crop
@@ -246,6 +263,12 @@ class ReferenceImage(QGraphicsScene):
                 self.fps_start_time = now
         else:
             self.fps_count = 0
+
+        # Phase 1: Record inference time for frame skipping adaptation
+        if self._inference_start_time > 0:
+            inference_time_ms = (time.time() - self._inference_start_time) * 1000
+            self.image_processor.record_inference_time(inference_time_ms)
+            self._inference_start_time = 0.0
 
         self._displaying = False
 
