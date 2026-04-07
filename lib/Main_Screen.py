@@ -12,17 +12,17 @@ from PyQt5.QtWidgets import QMainWindow, QMessageBox, QFileDialog
 from PyQt5.QtCore import QTimer, QProcess, QTime, QDate, Qt, QPropertyAnimation, QSize
 from PyQt5.QtGui import QTransform
 
-from Global import signal, initialize_secure_dongle, catch_errors, delete_folder
-from Camera_Program import CameraController
-from Display import ReferenceImage
-from PLC import PLCController
-from Database import DatabaseConnection, BaseModel, Product, CurrentSession, User
-from UpdateChecker import UpdateChecker
-from version import __version__
+from lib.Global import signal, initialize_secure_dongle, catch_errors, delete_folder
+from lib.Camera_Program import CameraController
+from lib.Display import ReferenceImage
+from lib.PLC import PLCController
+from lib.Database import DatabaseConnection, BaseModel, Product, CurrentSession, User
+from lib.UpdateChecker import UpdateChecker
+from lib.version import __version__
 
 db = DatabaseConnection()
 BaseModel.use_db(db)
-from Authentication import Authentication
+from lib.Authentication import Authentication
 
 
 class MainScreen(QMainWindow):

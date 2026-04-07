@@ -7,7 +7,7 @@ from pymodbus.client import ModbusTcpClient, ModbusSerialClient
 import pymcprotocol
 from PyQt5.QtCore import QTimer, QThread
 
-from Global import signal, catch_errors
+from lib.Global import signal, catch_errors
 
 
 # =============================================================================

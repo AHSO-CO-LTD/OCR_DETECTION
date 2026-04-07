@@ -5,8 +5,8 @@ from PyQt5.QtWidgets import (
 from PyQt5.uic import loadUi
 from PyQt5.QtCore import Qt, pyqtSignal
 
-from Global import signal, OskEventFilter, CheckPasswordMessage
-from Database import DatabaseConnection, BaseModel, User, LoginAudit, AuditTrial, hash_password
+from lib.Global import signal, OskEventFilter, CheckPasswordMessage
+from lib.Database import DatabaseConnection, BaseModel, User, LoginAudit, AuditTrial, hash_password
 db = DatabaseConnection()
 BaseModel.use_db(db)
 

@@ -4,7 +4,7 @@ import inspect
 
 from pypylon import pylon
 
-from Global import signal, global_vars, catch_errors
+from lib.Global import signal, global_vars, catch_errors
 
 
 class CameraController:
