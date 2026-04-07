@@ -9,8 +9,6 @@ on:
 jobs:
   build:
     runs-on: windows-latest
-    strategy:
-      fail-fast: false
 
     steps:
       - name: Checkout code
@@ -21,33 +19,58 @@ jobs:
         with:
           python-version: '3.9'
 
+      - name: Cache pip packages
+        uses: actions/cache@v4
+        with:
+          path: ~\AppData\Local\pip\Cache
+          key: ${{ runner.os }}-pip-${{ hashFiles('requirements.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-
+
       - name: Create config.yaml from template
-        run: |
-          Copy-Item config.yaml.example config.yaml
+        run: Copy-Item config.yaml.example config.yaml
         shell: powershell
 
-      - name: Install dependencies
+      - name: Install base dependencies
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
+        shell: powershell
+
+      - name: Install torch (CPU-only for build)
+        run: |
+          pip install torch==2.0.1+cpu torchvision==0.15.2+cpu --extra-index-url https://download.pytorch.org/whl/cpu
+        shell: powershell
+
+      - name: Install ultralytics
+        run: pip install ultralytics>=8.0.0
+        shell: powershell
+
+      - name: Verify installation
+        run: |
+          python -c "import PyQt5; print('PyQt5 OK')"
+          python -c "import torch; print('torch OK:', torch.__version__)"
+          python -c "import cv2; print('cv2 OK')"
+          python -c "import ultralytics; print('ultralytics OK')"
+        shell: powershell
 
       - name: Build EXE with PyInstaller
-        run: |
-          pyinstaller build_windows.spec --noconfirm
+        run: pyinstaller build_windows.spec --noconfirm
+        shell: powershell
 
       - name: Create ZIP artifact
         run: |
           $version = git describe --tags --always
           $zipName = "DRB-OCR-AI-$version.zip"
-          Compress-Archive -Path dist/DRB-OCR-AI -DestinationPath $zipName
+          Compress-Archive -Path dist\DRB-OCR-AI -DestinationPath $zipName
           echo "ZIP_FILE=$zipName" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
         shell: powershell
 
-      - name: Upload artifact to workflow
+      - name: Upload artifact
         uses: actions/upload-artifact@v5
         with:
           name: DRB-OCR-AI-Build
-          path: dist/DRB-OCR-AI/
+          path: dist\DRB-OCR-AI\
 
   release:
     needs: build
@@ -74,20 +97,8 @@ jobs:
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          files: |
-            DRB-OCR-AI-*.zip
+          files: DRB-OCR-AI-*.zip
           generate_release_notes: true
           draft: false
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-  notify:
-    needs: release
-    runs-on: ubuntu-latest
-    if: startsWith(github.ref, 'refs/tags/')
-
-    steps:
-      - name: Notify release created
-        run: |
-          echo "✅ Release created: ${{ github.ref_name }}"
-          echo "📦 Download from: https://github.com/${{ github.repository }}/releases/tag/${{ github.ref_name }}"
