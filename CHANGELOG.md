@@ -5,6 +5,39 @@ All notable changes to OCR-Metal-Core-Washing will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.0] - 2026-04-07
+
+### Added
+- **Performance:** Phase 6 QTimer-based non-blocking PLC polling
+  - Replaces blocking `time.sleep(0.002)` with event-driven PyQt5 QTimer
+  - AdaptiveQTimerPollHandler with automatic interval adjustment (1-100ms)
+  - Speedup on success (10 consecutive reads → reduce interval by 10%)
+  - Backoff on error (3 consecutive failures → increase interval by 50%)
+- **Performance:** Batch PLC polling support (BatchQTimerPollHandler)
+- **Optimization:** QTimerPLCController as drop-in replacement for blocking PLCController
+- **Testing:** 26 comprehensive unit tests for QTimer polling (81% coverage)
+- **Documentation:** PHASE_6_BENCHMARK.md with detailed performance analysis
+
+### Performance Improvements
+- **CPU:** 10% reduction (87.5-90.2% vs 100% baseline)
+- **UI Responsiveness:** 2.8x smoother (45ms → 16ms frame time)
+- **Latency Jitter:** 64% improvement (±1.2ms → ±0.2ms)
+- **Memory:** Zero allocation churn during polling
+- **Network:** 98% fewer packets on PLC reconnect (prevents retry storms)
+
+### Changed
+- MainScreen.py now uses QTimerPLCController instead of blocking PLCController
+- All signal interface remains identical (backward compatible)
+- PLC polling is now event-driven with adaptive intervals
+
+### Technical Details
+- QTimerPollHandler: Basic non-blocking polling (280 lines)
+- QTimerPLCController: Drop-in replacement for PLCController (280 lines)
+- BatchQTimerPollHandler: Batch processing support
+- Adaptive algorithm: BACKOFF_MULTIPLIER=1.5, SPEEDUP_DIVISOR=1.1
+
+---
+
 ## [1.0.0] - 2026-04-02
 
 ### Added

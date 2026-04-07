@@ -15,7 +15,7 @@ from PyQt5.QtGui import QTransform
 from lib.Global import signal, initialize_secure_dongle, catch_errors, delete_folder
 from lib.Camera_Program import CameraController
 from lib.Display import ReferenceImage
-from lib.PLC import PLCController
+from lib.QTimerPLCController import QTimerPLCController
 from lib.Database import DatabaseConnection, BaseModel, Product, CurrentSession, User
 from lib.UpdateChecker import UpdateChecker
 from lib.version import __version__
@@ -68,7 +68,7 @@ class MainScreen(QMainWindow):
         loadUi("form_UI/screenMain.ui", self)
         self.camera_controller = CameraController()
         self.reference_image = ReferenceImage(GUI=self)
-        self.PLC = PLCController()
+        self.PLC = QTimerPLCController()
         self.update_checker = UpdateChecker(__version__, parent=self)
         self.set_event()
         self.set_value()
