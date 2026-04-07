@@ -58,12 +58,19 @@ jobs:
         run: pyinstaller build_windows.spec --noconfirm
         shell: powershell
 
-      - name: Create ZIP artifact
+      - name: Generate manifest and split packages
         run: |
-          $version = git describe --tags --always
-          $zipName = "DRB-OCR-AI-$version.zip"
-          Compress-Archive -Path dist\DRB-OCR-AI -DestinationPath $zipName
-          echo "ZIP_FILE=$zipName" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          $version = git describe --tags --always | % {$_.TrimStart('v')}
+          python scripts/generate_manifest.py dist/DRB-OCR-AI/ $version
+          echo "VERSION=$version" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+        shell: powershell
+
+      - name: Verify packages created
+        run: |
+          Get-ChildItem dist/*.zip | ForEach-Object {
+            $sizeGB = $_.Length / 1GB
+            Write-Host "✓ $($_.Name) - $([Math]::Round($sizeGB * 1024, 1)) MB"
+          }
         shell: powershell
 
       - name: Upload artifact
@@ -89,15 +96,28 @@ jobs:
           name: DRB-OCR-AI-Build
           path: release-artifacts/
 
-      - name: Create ZIP from artifacts
+      - name: Prepare release files
         run: |
-          cd release-artifacts
-          zip -r ../DRB-OCR-AI-$(git describe --tags --always).zip .
+          VERSION=$(git describe --tags --always | sed 's/^v//')
+
+          # The manifest and zip files should be in the dist directory
+          # They were created by generate_manifest.py during build
+          ls -lh dist/*.zip 2>/dev/null || echo "No zips found in dist"
+          ls -lh release-artifacts/manifest.json 2>/dev/null || echo "Manifest not found"
+
+          # Prepare release directory
+          mkdir -p release-files
+          cp release-artifacts/manifest.json release-files/ 2>/dev/null || true
+
+          echo "VERSION=$VERSION" >> $GITHUB_ENV
+          echo "Release files ready"
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          files: DRB-OCR-AI-*.zip
+          files: |
+            dist/DRB-OCR-AI-v*.zip
+            release-artifacts/manifest.json
           generate_release_notes: true
           draft: false
         env:

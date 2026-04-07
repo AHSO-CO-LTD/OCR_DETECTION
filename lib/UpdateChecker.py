@@ -1,32 +1,43 @@
 """
-Auto-update checker for OCR-Metal-Core-Washing
-
-Checks GitHub Releases API for new versions and notifies user.
-Runs in background thread to avoid blocking UI.
+Enhanced Auto-update Checker - Intelligent delta updates
+Checks GitHub Releases API for new versions with manifest-based delta updates
+Provides one-click update with automatic restart capability
 """
 
 import threading
-import requests
-from packaging import version as pkg_version
 from PyQt5.QtWidgets import QMessageBox
+from PyQt5.QtCore import QTimer
+
+from lib.Updater import DeltaUpdater, UpdateInfo
+from lib.UpdateDialog import UpdateNotificationDialog, UpdateProgressDialog
 
 
 class UpdateChecker:
-    """Check for newer releases on GitHub"""
+    """Check for newer releases on GitHub with delta update capability"""
 
-    REPO_URL = "https://api.github.com/repos/AHSO-CO-LTD/OCR-Metal-Core-Washing/releases/latest"
-    TIMEOUT_SECONDS = 5  # Don't block UI for more than 5 seconds
+    TIMEOUT_SECONDS = 10
 
-    def __init__(self, current_version: str, parent=None):
+    def __init__(self, current_version: str, parent=None, app_path=None):
         """
         Args:
             current_version: Current app version (e.g., "1.0.0")
             parent: Parent widget for showing dialogs
+            app_path: Path to application directory
         """
         self.current_version = current_version
         self.parent = parent
-        self.latest_version = None
-        self.download_url = None
+        self.app_path = app_path
+
+        # Initialize delta updater
+        self.delta_updater = DeltaUpdater(app_path)
+
+        # Connect updater signals
+        self.delta_updater.error.connect(self._on_updater_error)
+        self.delta_updater.status_changed.connect(self._on_updater_status)
+        self.delta_updater.update_available.connect(self._on_update_found)
+
+        self.update_info = None
+        self.progress_dialog = None
 
     def check_for_updates(self):
         """Check for updates in background thread"""
@@ -36,43 +47,87 @@ class UpdateChecker:
     def _check_async(self):
         """Async update check (runs in background thread)"""
         try:
-            response = requests.get(self.REPO_URL, timeout=self.TIMEOUT_SECONDS)
-            response.raise_for_status()
+            # Use delta updater to check
+            update_info = self.delta_updater.check_for_updates()
 
-            data = response.json()
-            self.latest_version = data.get("tag_name", "").lstrip("v")
+            if update_info:
+                self.update_info = update_info
+                QTimer.singleShot(0, self._show_update_dialog)
 
-            if not self.latest_version:
-                return
-
-            # Compare versions
-            if pkg_version.parse(self.latest_version) > pkg_version.parse(self.current_version):
-                self.download_url = data.get("html_url", "")
-                self._show_update_available()
-
-        except requests.exceptions.Timeout:
-            pass  # Silent timeout — don't block startup
-        except requests.exceptions.RequestException:
-            pass  # Silent network error — don't block startup
         except Exception:
             pass  # Silent error — don't block startup
 
-    def _show_update_available(self):
-        """Show notification dialog to user"""
-        if not self.parent:
+    def _show_update_dialog(self):
+        """Show update notification dialog"""
+        if not self.parent or not self.update_info:
             return
 
-        msg_box = QMessageBox(self.parent)
-        msg_box.setIcon(QMessageBox.Information)
-        msg_box.setWindowTitle("New Version Available")
-        msg_box.setText(
-            f"A new version is available!\n\n"
-            f"Current: v{self.current_version}\n"
-            f"Latest: v{self.latest_version}\n\n"
-            f"Click 'Yes' to visit the download page."
-        )
-        msg_box.setStandardButtons(QMessageBox.Yes | QMessageBox.No)
+        dialog = UpdateNotificationDialog(self.update_info, self.parent)
+        dialog.update_confirmed.connect(self._on_update_confirmed)
+        dialog.update_skipped.connect(self._on_update_skipped)
+        dialog.exec_()
 
-        if msg_box.exec_() == QMessageBox.Yes:
-            import webbrowser
-            webbrowser.open(self.download_url)
+    def _on_update_confirmed(self):
+        """Handle user confirming update"""
+        if not self.update_info:
+            return
+
+        # Show progress dialog
+        self.progress_dialog = UpdateProgressDialog(self.update_info, self.parent)
+
+        # Connect updater signals to progress dialog
+        self.delta_updater.progress.connect(self.progress_dialog.update_progress)
+        self.delta_updater.status_changed.connect(self.progress_dialog.update_status)
+        self.delta_updater.update_complete.connect(self._on_update_complete)
+        self.delta_updater.error.connect(lambda msg: self.progress_dialog.on_error(msg))
+
+        # Start update in separate thread
+        thread = threading.Thread(
+            target=self.delta_updater.download_and_apply,
+            args=(self.update_info,),
+            daemon=True
+        )
+        thread.start()
+
+        # Show progress dialog
+        self.progress_dialog.exec_()
+
+    def _on_update_skipped(self):
+        """Handle user skipping update"""
+        # Do nothing, user will be reminded next time
+        pass
+
+    def _on_update_found(self, update_info: UpdateInfo):
+        """Handle update found signal from delta updater"""
+        self.update_info = update_info
+
+    def _on_update_complete(self):
+        """Handle update completed"""
+        if self.progress_dialog:
+            self.progress_dialog.on_complete()
+
+            # Schedule restart after dialog closes
+            QTimer.singleShot(3100, self._trigger_restart)
+
+    def _on_updater_error(self, error_msg: str):
+        """Handle error from delta updater"""
+        if self.progress_dialog:
+            self.progress_dialog.on_error(error_msg)
+
+    def _on_updater_status(self, status_msg: str):
+        """Handle status update from delta updater"""
+        if self.progress_dialog:
+            self.progress_dialog.update_status(status_msg)
+
+    def _trigger_restart(self):
+        """Trigger application restart"""
+        try:
+            self.delta_updater.trigger_restart()
+        except Exception as e:
+            print(f"Error triggering restart: {e}")
+            if self.parent:
+                QMessageBox.information(
+                    self.parent,
+                    "Update Complete",
+                    "Update completed successfully! Please restart the application to apply changes."
+                )
