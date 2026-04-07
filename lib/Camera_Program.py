@@ -2,7 +2,13 @@ import threading
 import time
 import inspect
 
-from pypylon import pylon
+# Optional: Basler pylon camera SDK (only if using Basler cameras)
+try:
+    from pypylon import pylon
+    PYLON_AVAILABLE = True
+except ImportError:
+    pylon = None
+    PYLON_AVAILABLE = False
 
 from lib.Global import signal, global_vars, catch_errors
 
@@ -11,10 +17,17 @@ class CameraController:
     def __init__(self):
         super().__init__()
         # self.set_variable()
-        self.cam: pylon.InstantCamera = None
-        self.converter = pylon.ImageFormatConverter()
-        self.converter.OutputPixelFormat = pylon.PixelType_RGB8packed
-        self.converter.OutputBitAlignment = pylon.OutputBitAlignment_MsbAligned
+
+        if not PYLON_AVAILABLE:
+            # Basler pylon not available - initialize with None
+            self.cam = None
+            self.converter = None
+        else:
+            self.cam: pylon.InstantCamera = None
+            self.converter = pylon.ImageFormatConverter()
+            self.converter.OutputPixelFormat = pylon.PixelType_RGB8packed
+            self.converter.OutputBitAlignment = pylon.OutputBitAlignment_MsbAligned
+
         self.set_event()
         self.set_value()
 
@@ -33,6 +46,15 @@ class CameraController:
     # Excecute=======================================================================
     @catch_errors
     def connect_camera(self):
+        if not PYLON_AVAILABLE:
+            signal.show_error_message_main.emit(
+                "Basler pylon camera SDK is not installed.\n\n"
+                "Please install it using:\n"
+                "pip install pypylon\n\n"
+                "Or configure a different camera provider in config.yaml"
+            )
+            return
+
         tlFactory = pylon.TlFactory.GetInstance()
         devices = tlFactory.EnumerateDevices()
         if len(devices) == 0:
