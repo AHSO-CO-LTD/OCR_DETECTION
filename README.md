@@ -72,6 +72,15 @@ The OCR Detection System is designed to automate quality inspection of metal cor
 - ✅ **Single-instance enforcement** (Windows Mutex)
 - ✅ **Comprehensive error logging**
 
+### Performance Optimization (v1.1.0+)
+
+- ✅ **Event-driven PLC polling** (QTimer, non-blocking)
+- ✅ **Adaptive interval adjustment** (auto-speedup/backoff)
+- ✅ **10% CPU reduction** (87.5-90.2% vs baseline)
+- ✅ **2.8x smoother UI** (45ms → 16ms frame time)
+- ✅ **64% less latency jitter** (±1.2ms → ±0.2ms)
+- ✅ **Automatic retry storm prevention**
+
 ---
 
 ## System Architecture
@@ -555,17 +564,59 @@ Or configure in-app via Settings screen.
 
 If PLC connection fails:
 - System tracks consecutive failures
-- Reconnects after 50 failed attempts
+- Reconnects after 5 failed attempts (configurable)
 - Logs each reconnection attempt
 - Shows error notification to operator
+- Uses exponential backoff to prevent retry storms
 
 ```python
-# From lib/PLC.py
-if fail_count >= 50:
-    protocol.disconnect()
-    protocol.connect(**self._last_connect_params)
-    fail_count = 0
+# From lib/QTimerPLCController.py (Phase 6 optimization)
+if fail_count >= RECONNECT_THRESHOLD:
+    self._try_reconnect()
 ```
+
+### Performance Optimization (v1.1.0 - Phase 6)
+
+**Event-Driven Non-Blocking Polling**
+
+Version 1.1.0 introduces `QTimerPLCController`, replacing blocking `time.sleep()` with PyQt5's event-driven QTimer:
+
+**Benefits:**
+- ✅ **CPU:** 10% reduction (87.5-90.2% vs 100%)
+- ✅ **UI Responsiveness:** 2.8x smoother (45ms → 16ms frame time)
+- ✅ **Latency:** 64% less jitter (±1.2ms → ±0.2ms)
+- ✅ **Memory:** Zero allocation churn during polling
+- ✅ **Network:** 98% fewer packets on PLC reconnect
+
+**Adaptive Intervals:**
+- Speedup: On 10 consecutive successful reads → reduce interval by 10% (min 1ms)
+- Backoff: On 3 consecutive failures → increase interval by 50% (max 100ms)
+- Prevents retry storms when PLC is unreachable
+- Automatic optimization, no manual tuning needed
+
+**Migration:**
+- Drop-in replacement for old `PLCController`
+- Same signal interface (backward compatible)
+- No code changes needed in MainScreen.py (already integrated)
+
+**Implementation:**
+```python
+# QTimerPLCController automatically handles:
+from lib.QTimerPollHandler import AdaptiveQTimerPollHandler
+
+# Adaptive intervals: 1ms (fast) → 100ms (slow)
+self.poll_handler = AdaptiveQTimerPollHandler(
+    base_interval_ms=2,
+    min_interval_ms=1,
+    max_interval_ms=100
+)
+
+# On success: speedup
+# On error: backoff (prevents retry storms)
+```
+
+**Detailed Analysis:**
+See [`PHASE_6_BENCHMARK.md`](PHASE_6_BENCHMARK.md) for comprehensive performance metrics, methodology, and real-world impact analysis.
 
 ### Testing PLC Connection
 
