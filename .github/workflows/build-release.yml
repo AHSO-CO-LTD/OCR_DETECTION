@@ -73,11 +73,19 @@ jobs:
           }
         shell: powershell
 
-      - name: Upload artifact
+      - name: Upload artifact - app directory
         uses: actions/upload-artifact@v5
         with:
           name: DRB-OCR-AI-Build
           path: dist\DRB-OCR-AI\
+
+      - name: Upload artifact - ZIP packages and manifest
+        uses: actions/upload-artifact@v5
+        with:
+          name: DRB-OCR-AI-Packages
+          path: |
+            dist\DRB-OCR-AI-v*.zip
+            dist\manifest*.json
 
   release:
     needs: build
@@ -90,34 +98,36 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v5
 
-      - name: Download artifacts
+      - name: Download package artifacts
         uses: actions/download-artifact@v5
         with:
-          name: DRB-OCR-AI-Build
+          name: DRB-OCR-AI-Packages
           path: release-artifacts/
 
       - name: Prepare release files
         run: |
           VERSION=$(git describe --tags --always | sed 's/^v//')
 
-          # The manifest and zip files should be in the dist directory
-          # They were created by generate_manifest.py during build
-          ls -lh dist/*.zip 2>/dev/null || echo "No zips found in dist"
-          ls -lh release-artifacts/manifest.json 2>/dev/null || echo "Manifest not found"
-
-          # Prepare release directory
-          mkdir -p release-files
-          cp release-artifacts/manifest.json release-files/ 2>/dev/null || true
-
           echo "VERSION=$VERSION" >> $GITHUB_ENV
-          echo "Release files ready"
+
+          # List downloaded files
+          echo "Downloaded files:"
+          ls -lh release-artifacts/
+
+          # Move files to root for release
+          mkdir -p dist
+          cp release-artifacts/DRB-OCR-AI-v*.zip dist/ 2>/dev/null || true
+          cp release-artifacts/manifest*.json dist/ 2>/dev/null || true
+
+          echo "Files ready for release:"
+          ls -lh dist/
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
           files: |
             dist/DRB-OCR-AI-v*.zip
-            release-artifacts/manifest.json
+            dist/manifest*.json
           generate_release_notes: true
           draft: false
         env:
