@@ -1,10 +1,8 @@
 # -*- mode: python ; coding: utf-8 -*-
 """
 PyInstaller spec file for OCR Detection System v1.1.0 (Windows)
-Builds Windows .exe with all dependencies
+Simplified for GitHub Actions build
 """
-
-block_cipher = None
 
 a = Analysis(
     ['main.py'],
@@ -12,42 +10,23 @@ a = Analysis(
     binaries=[],
     datas=[
         ('form_UI', 'form_UI'),
-        ('assets', 'assets'),
-        ('config.yaml.example', '.'),
     ],
     hiddenimports=[
+        'PyQt5',
         'PyQt5.QtCore',
         'PyQt5.QtGui',
         'PyQt5.QtWidgets',
-        'PyQt5.uic',
-        'lib.Global',
-        'lib.Database',
-        'lib.Authentication',
-        'lib.Camera_Program',
-        'lib.PLC',
-        'lib.QTimerPollHandler',
-        'lib.QTimerPLCController',
-        'lib.Display',
-        'lib.UpdateChecker',
-        'lib.version',
-        'peewee',
-        'pymysql',
-        'cv2',
-        'numpy',
-        'torch',
-        'ultralytics',
+        'lib',
     ],
     hookspath=[],
-    hooksconfig={},
     runtime_hooks=[],
     excludedimports=[],
     win_no_prefer_redirects=False,
     win_private_assemblies=False,
-    cipher=block_cipher,
     noarchive=False,
 )
 
-pyz = PYZ(a.pure, a.zipped_data, cipher=block_cipher)
+pyz = PYZ(a.pure, a.zipped_data)
 
 exe = EXE(
     pyz,
@@ -64,11 +43,6 @@ exe = EXE(
     upx_exclude=[],
     runtime_tmpdir=None,
     console=False,
-    disable_windowed_traceback=False,
-    target_arch=None,
-    codesign_identity=None,
-    entitlements_file=None,
-    icon='assets/icon.ico',
 )
 
 coll = COLLECT(
