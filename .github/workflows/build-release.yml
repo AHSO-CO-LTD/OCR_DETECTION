@@ -33,7 +33,7 @@ jobs:
 
       - name: Build EXE with PyInstaller
         run: |
-          pyinstaller main.spec --noconfirm
+          pyinstaller build_windows.spec --noconfirm
 
       - name: Create ZIP artifact
         run: |
