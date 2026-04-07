@@ -1,6 +1,6 @@
 # -*- mode: python ; coding: utf-8 -*-
 """
-PyInstaller spec for OCR Detection System v1.1.0 (Windows)
+PyInstaller spec for OCR Detection System v1.2.0 (Windows)
 """
 
 a = Analysis(
@@ -51,10 +51,8 @@ pyz = PYZ(a.pure, a.zipped_data)
 exe = EXE(
     pyz,
     a.scripts,
-    a.binaries,
-    a.zipfiles,
-    a.datas,
     [],
+    exclude_binaries=True,
     name='DRB-OCR-AI',
     debug=False,
     strip=False,

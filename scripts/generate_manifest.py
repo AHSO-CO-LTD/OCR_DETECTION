@@ -187,12 +187,18 @@ def main():
     # Generate manifest
     manifest = generate_manifest(app_dir, version)
 
-    # Save manifest
+    # Save manifest INSIDE app directory (for the installed app to use)
     manifest_path = app_dir / "manifest.json"
     with open(manifest_path, 'w', encoding='utf-8') as f:
         json.dump(manifest, f, indent=2)
-
     print(f"✓ Manifest saved: {manifest_path}")
+
+    # ALSO save versioned manifest in PARENT directory (for CI/CD release upload)
+    versioned_manifest_path = app_dir.parent / f"manifest-v{version}.json"
+    with open(versioned_manifest_path, 'w', encoding='utf-8') as f:
+        json.dump(manifest, f, indent=2)
+    print(f"✓ Versioned manifest saved: {versioned_manifest_path}")
+
     print()
     print(f"Summary:")
     print(f"  Version: {version}")
@@ -205,8 +211,30 @@ def main():
     print("=" * 60)
     create_split_zips(app_dir, version, app_dir.parent)
 
+    # Verify all output files exist
     print("=" * 60)
-    print("✓ Manifest generation complete!")
+    print("Verifying output files:")
+    output_dir = app_dir.parent
+    expected_files = [
+        manifest_path,
+        versioned_manifest_path,
+        output_dir / f"DRB-OCR-AI-v{version}-core.zip",
+        output_dir / f"DRB-OCR-AI-v{version}-full.zip",
+    ]
+    all_ok = True
+    for f in expected_files:
+        if f.exists():
+            size_mb = f.stat().st_size / (1024 * 1024)
+            print(f"  ✓ {f.name} ({size_mb:.1f} MB)")
+        else:
+            print(f"  ✗ MISSING: {f}")
+            all_ok = False
+
+    if all_ok:
+        print("\n✓ All files generated successfully!")
+    else:
+        print("\n✗ Some files are missing!")
+        sys.exit(1)
 
 
 if __name__ == "__main__":
