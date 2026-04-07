@@ -21,9 +21,14 @@ import tqdm  # dùng cho thanh tiến trình
 # --- Communication / PLC / Database ---
 from pymodbus.client import ModbusTcpClient, ModbusSerialClient
 import pymodbus
-import pymcprotocol
 import pymysql
 from pymysql.err import MySQLError
+
+# Optional: SLMP protocol for Mitsubishi PLC (only if using SLMP)
+try:
+    import pymcprotocol
+except ImportError:
+    pymcprotocol = None
 
 # --- Windows API (Single Instance) ---
 import win32event
@@ -36,7 +41,12 @@ import cv2
 import cvzone
 from cvzone.Utils import putTextRect
 from PIL import Image, ImageTk
-from pypylon import pylon
+
+# Optional: Basler pylon camera SDK (only if using Basler cameras)
+try:
+    from pypylon import pylon
+except ImportError:
+    pylon = None
 
 # --- GUI (PyQt5 + PyQtGraph) ---
 from PyQt5 import QtCore, QtGui, QtWidgets, uic
