@@ -30,3 +30,5 @@ lib/dongle_log.txt
 .DS_Store
 Thumbs.db
 Icon
+# Temporary build tools
+Understand-Anything/
