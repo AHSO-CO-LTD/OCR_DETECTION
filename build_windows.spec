@@ -15,11 +15,15 @@ a = Analysis(
         # PyQt5
         'PyQt5', 'PyQt5.QtCore', 'PyQt5.QtGui', 'PyQt5.QtWidgets',
         'PyQt5.uic', 'PyQt5.QtMultimedia', 'PyQt5.sip',
-        # AI/ML
+        # AI/ML - PyTorch
+        'torch', 'torch.nn', 'torch.optim', 'torch.utils', 'torch.utils.data',
+        'torchvision', 'torchvision.datasets', 'torchvision.transforms', 'torchvision.models',
+        'torchinfo', 'tqdm',
+        # YOLO
+        'ultralytics', 'ultralytics.models', 'ultralytics.utils',
+        # Scikit-learn
         'sklearn', 'sklearn.model_selection', 'sklearn.preprocessing',
         'sklearn.utils', 'sklearn.metrics',
-        'torchinfo', 'tqdm',
-        'ultralytics', 'ultralytics.models', 'ultralytics.utils',
         # Vision
         'cv2', 'cvzone', 'cvzone.Utils',
         'PIL', 'PIL.Image', 'PIL.ImageTk',
@@ -30,10 +34,12 @@ a = Analysis(
         # Database
         'peewee', 'pymysql', 'pymysql.err',
         # Windows API
-        'win32event', 'win32api', 'winerror', 'win32con',
-        # Data
+        'win32event', 'win32api', 'winerror', 'win32con', 'win32file', 'win32pipe',
+        # Data & Config
         'pandas', 'numpy', 'yaml', 'packaging', 'packaging.version',
-        # System
+        # XML
+        'xml', 'xml.etree', 'xml.etree.ElementTree', 'xml.dom', 'xml.dom.minidom',
+        # System & Network
         'psutil', 'requests', 'bcrypt', 'pyqtgraph',
         # App modules
         'lib', 'lib.StackUI',
