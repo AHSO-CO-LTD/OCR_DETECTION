@@ -24,20 +24,11 @@ jobs:
         run: Copy-Item config.yaml.example config.yaml
         shell: powershell
 
-      - name: Install base dependencies
+      - name: Install dependencies from requirements.txt
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
-        shell: powershell
-
-      - name: Install torch (CPU-only for build)
-        run: |
-          pip install torch==2.0.1+cpu torchvision==0.15.2+cpu --extra-index-url https://download.pytorch.org/whl/cpu
-        shell: powershell
-
-      - name: Install ultralytics
-        run: pip install "ultralytics>=8.0.0"
-        shell: powershell
+        shell: pwsh
 
       - name: Verify installation
         run: |
@@ -48,26 +39,29 @@ jobs:
           python -c "import sklearn; print('sklearn OK')"
           python -c "import peewee; print('peewee OK')"
           python -c "import bcrypt; print('bcrypt OK')"
-        shell: powershell
+        shell: pwsh
 
       - name: Build EXE with PyInstaller
         run: pyinstaller build_windows.spec --noconfirm
-        shell: powershell
+        shell: pwsh
 
       - name: Debug - List dist directory
         run: |
           Write-Host "=== dist/ directory ==="
           Get-ChildItem -Path dist -Recurse -Depth 1 | Format-Table Name, Length, FullName
-        shell: powershell
+        shell: pwsh
 
       - name: Get version from tag
         id: version
         run: |
-          $version = git describe --tags --always
-          $version = $version.TrimStart('v')
-          Write-Host "Version: $version"
+          $fullVersion = git describe --tags --always
+          Write-Host "Full version string: $fullVersion"
+          # Remove 'v' prefix and handle cases like "v1.2.0-5-gabcdef"
+          $version = $fullVersion.TrimStart('v').Split('-')[0]
+          Write-Host "Extracted version: $version"
+          # Use step output instead of GITHUB_ENV for more reliable access
+          "version=$version" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
           Add-Content -Path $env:GITHUB_ENV -Value "VERSION=$version" -Encoding utf8
-          Add-Content -Path $env:GITHUB_OUTPUT -Value "version=$version" -Encoding utf8
         shell: pwsh
 
       - name: Verify version environment
@@ -77,12 +71,18 @@ jobs:
             Write-Error "VERSION environment variable is empty!"
             exit 1
           }
-        shell: powershell
+        shell: pwsh
 
       - name: Generate manifest and split packages
         run: |
+          Write-Host "Generating manifest for version: $env:VERSION"
           python scripts/generate_manifest.py dist/DRB-OCR-AI/ $env:VERSION
-        shell: powershell
+          if ($LASTEXITCODE -ne 0) {
+            Write-Error "Manifest generation failed with exit code $LASTEXITCODE"
+            exit 1
+          }
+          Write-Host "Manifest generation completed successfully"
+        shell: pwsh
 
       - name: Debug - List all output files
         run: |
@@ -98,7 +98,7 @@ jobs:
           } else {
             Write-Host "  MISSING - dist/DRB-OCR-AI/manifest.json"
           }
-        shell: powershell
+        shell: pwsh
 
       - name: Upload release packages
         uses: actions/upload-artifact@v4
