@@ -9,40 +9,49 @@ a = Analysis(
     binaries=[],
     datas=[
         ('form_UI', 'form_UI'),
-        ('lib', 'lib'),
     ],
     hiddenimports=[
         # PyQt5
         'PyQt5', 'PyQt5.QtCore', 'PyQt5.QtGui', 'PyQt5.QtWidgets',
         'PyQt5.uic', 'PyQt5.QtMultimedia', 'PyQt5.sip',
-        # AI/ML - PyTorch
-        'torch', 'torch.nn', 'torch.optim', 'torch.utils', 'torch.utils.data',
-        'torchvision', 'torchvision.datasets', 'torchvision.transforms', 'torchvision.models',
+        # AI/ML - PyTorch (all needed submodules)
+        'torch', 'torch.nn', 'torch.nn.functional', 'torch.optim',
+        'torch.utils', 'torch.utils.data', 'torch.backends', 'torch.backends.cudnn',
+        'torchvision', 'torchvision.datasets', 'torchvision.transforms',
+        'torchvision.models', 'torchvision.io', 'torchvision.ops',
         'torchinfo', 'tqdm',
-        # YOLO
+        # YOLO (ultralytics)
         'ultralytics', 'ultralytics.models', 'ultralytics.utils',
+        'ultralytics.utils.callbacks', 'ultralytics.nn', 'ultralytics.engine',
         # Scikit-learn
         'sklearn', 'sklearn.model_selection', 'sklearn.preprocessing',
-        'sklearn.utils', 'sklearn.metrics',
-        # Vision
+        'sklearn.utils', 'sklearn.metrics', 'sklearn.ensemble',
+        # Vision/Image
         'cv2', 'cvzone', 'cvzone.Utils',
-        'PIL', 'PIL.Image', 'PIL.ImageTk',
+        'PIL', 'PIL.Image', 'PIL.ImageTk', 'PIL.ImageDraw', 'PIL.ImageFont',
         # PLC / Communication
-        'pymodbus', 'pymodbus.client',
-        'pymcprotocol',
+        'pymodbus', 'pymodbus.client', 'pymodbus.client.sync',
+        'pymcprotocol', 'pymcprotocol.type3e',
         'serial', 'serial.tools', 'serial.tools.list_ports',
         # Database
-        'peewee', 'pymysql', 'pymysql.err',
+        'peewee', 'pymysql', 'pymysql.err', 'pymysql.converters',
         # Windows API
-        'win32event', 'win32api', 'winerror', 'win32con', 'win32file', 'win32pipe',
+        'win32event', 'win32api', 'winerror', 'win32con',
+        'win32file', 'win32pipe', 'win32serviceutil',
         # Data & Config
-        'pandas', 'numpy', 'yaml', 'packaging', 'packaging.version',
-        # XML
-        'xml', 'xml.etree', 'xml.etree.ElementTree', 'xml.dom', 'xml.dom.minidom',
+        'pandas', 'pandas.core', 'pandas.io', 'pandas.io.formats',
+        'numpy', 'numpy.random', 'numpy.linalg',
+        'yaml', 'yaml.loader', 'packaging', 'packaging.version',
+        # XML & Text
+        'xml', 'xml.etree', 'xml.etree.ElementTree',
+        'xml.dom', 'xml.dom.minidom', 'json',
         # System & Network
-        'psutil', 'requests', 'bcrypt', 'pyqtgraph',
+        'psutil', 'psutil.sensors', 'requests', 'requests.auth',
+        'bcrypt', 'pyqtgraph', 'pyqtgraph.graphicsItems',
+        'colorama', 'matplotlib',  # Common dependencies
         # App modules
-        'lib', 'lib.StackUI',
+        'lib', 'lib.StackUI', 'lib.Global', 'lib.Database', 'lib.Camera_Program',
+        'lib.PLC', 'lib.Login_Screen', 'lib.Main_Screen',
     ],
     hookspath=[],
     runtime_hooks=[],
