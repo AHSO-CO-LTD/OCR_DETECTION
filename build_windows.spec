@@ -5,7 +5,7 @@ PyInstaller spec for OCR Detection System v1.2.0 (Windows)
 
 a = Analysis(
     ['main.py'],
-    pathex=[],
+    pathex=['lib'],
     binaries=[],
     datas=[
         ('form_UI', 'form_UI'),
@@ -36,7 +36,7 @@ a = Analysis(
         # System
         'psutil', 'requests', 'bcrypt', 'pyqtgraph',
         # App modules
-        'lib', 'StackUI',
+        'lib', 'lib.StackUI',
     ],
     hookspath=[],
     runtime_hooks=[],
@@ -56,7 +56,7 @@ exe = EXE(
     name='DRB-OCR-AI',
     debug=False,
     strip=False,
-    upx=True,
+    upx=False,
     upx_exclude=[],
     runtime_tmpdir=None,
     console=False,
@@ -68,7 +68,7 @@ coll = COLLECT(
     a.zipfiles,
     a.datas,
     strip=False,
-    upx=True,
+    upx=False,
     upx_exclude=[],
     name='DRB-OCR-AI'
 )

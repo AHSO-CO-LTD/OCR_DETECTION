@@ -159,8 +159,22 @@ from ctypes import c_int, byref
 SD_FIND = 1
 current_file_path = os.path.dirname(os.path.abspath(__file__))
 path = os.path.join(current_file_path, "System8.dll")
-hinst = ctypes.windll.LoadLibrary(path)
-SecureDongle = hinst.SecureDongle
+
+# Load System8.dll safely (Windows only, with error handling)
+_DONGLE_AVAILABLE = False
+SecureDongle = None
+
+try:
+    # Only attempt DLL loading on Windows
+    if sys.platform == "win32":
+        hinst = ctypes.windll.LoadLibrary(path)
+        SecureDongle = hinst.SecureDongle
+        _DONGLE_AVAILABLE = True
+except (OSError, AttributeError) as e:
+    # DLL not found, not on Windows, or other loading error
+    # This is non-fatal - dongle features are optional
+    _DONGLE_AVAILABLE = False
+    SecureDongle = None
 
 _dongle_log = {"ok_count": 0}
 _DONGLE_OK_LOG_COUNT = 100  # Log OK sau mỗi 100 lần check thành công
@@ -194,6 +208,10 @@ def check_dongle_and_log():
     Đọc retcode từ dongle và ghi log.
     Không retry, không trả về kết quả.
     """
+    if not _DONGLE_AVAILABLE or SecureDongle is None:
+        _write_dongle_log(-1, force=True)  # Log as error if dongle unavailable
+        return
+
     p1 = c_int(0x015A)
     p2 = c_int(0x2D58)
     p3 = c_int(0xEA8D)
@@ -226,7 +244,11 @@ def initialize_secure_dongle():
     """
     Kiểm tra dongle với retry logic.
     Retry tối đa _DONGLE_RETRY_COUNT lần cho đến khi thành công.
+    Returns False if dongle is not available on this platform.
     """
+    if not _DONGLE_AVAILABLE or SecureDongle is None:
+        return False  # Dongle not available - gracefully fail
+
     import time as _time
 
     p1 = c_int(0x015A)  # mật khẩu mặc định của key

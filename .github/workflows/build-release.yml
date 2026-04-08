@@ -36,7 +36,7 @@ jobs:
         shell: powershell
 
       - name: Install ultralytics
-        run: pip install ultralytics>=8.0.0
+        run: pip install "ultralytics>=8.0.0"
         shell: powershell
 
       - name: Verify installation
@@ -66,9 +66,9 @@ jobs:
           $version = git describe --tags --always
           $version = $version.TrimStart('v')
           Write-Host "Version: $version"
-          echo "VERSION=$version" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
-          echo "version=$version" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
-        shell: powershell
+          "VERSION=$version" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          "version=$version" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
+        shell: pwsh
 
       - name: Generate manifest and split packages
         run: |
