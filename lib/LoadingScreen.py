@@ -73,7 +73,7 @@ class CheckerThread(QThread):
         try:
             result = initialize_secure_dongle()
             if result:
-                self.status_update.emit("Hardware Dongle", "✓ OK", True)
+                self.status_update.emit("Hardware Dongle", "[OK]", True)
             else:
                 self.status_update.emit("Hardware Dongle", "✗ Not found", False)
                 self.warning_count += 1
@@ -90,7 +90,7 @@ class CheckerThread(QThread):
         """Check if config.yaml exists"""
         try:
             if os.path.exists(self.config_path):
-                self.status_update.emit("Config File", "✓ OK", True)
+                self.status_update.emit("Config File", "[OK]", True)
             else:
                 self.status_update.emit("Config File", "✗ Not found", False)
                 self.warning_count += 1
@@ -122,7 +122,7 @@ class CheckerThread(QThread):
                         cursor.execute("SELECT 1")
                         cursor.fetchone()
 
-                self.status_update.emit("Database", "✓ OK", True)
+                self.status_update.emit("Database", "[OK]", True)
                 logger.info("Database connection successful")
 
             except pymysql.err.OperationalError as e:
@@ -153,7 +153,7 @@ class CheckerThread(QThread):
             devices = tlFactory.EnumerateDevices()
 
             if len(devices) > 0:
-                self.status_update.emit("Camera", "✓ OK", True)
+                self.status_update.emit("Camera", "[OK]", True)
                 logger.info(f"Camera found: {len(devices)} device(s)")
             else:
                 self.status_update.emit("Camera", "✗ Not found", False)
@@ -200,7 +200,7 @@ class CheckerThread(QThread):
                                 self.status_update.emit("PLC", "✗ Read failed", False)
                                 self.warning_count += 1
                             else:
-                                self.status_update.emit("PLC", "✓ OK", True)
+                                self.status_update.emit("PLC", "[OK]", True)
                                 logger.info("PLC connection successful")
                         except Exception as e:
                             logger.warning(f"PLC read timeout: {e}")
@@ -219,7 +219,7 @@ class CheckerThread(QThread):
                 # For other protocols (RTU, SLMP), just show as ready
                 # and let MainScreen handle actual connection
                 logger.info(f"PLC protocol {protocol_type} - manual config")
-                self.status_update.emit("PLC", "✓ Ready (manual config)", True)
+                self.status_update.emit("PLC", "[READY] (manual config)", True)
 
         except ImportError:
             logger.warning("Pymodbus not available")
@@ -453,7 +453,7 @@ class LoadingScreen(QWidget):
 
         # Update icon
         if is_ok is True:
-            status_icon.setText("✓")
+            status_icon.setText("[OK]")
             status_icon.setStyleSheet("color: #4ad456; font-size: 18px; font-weight: bold;")
         elif is_ok is False:
             status_icon.setText("✗")
@@ -468,7 +468,7 @@ class LoadingScreen(QWidget):
         # Update progress
         completed = sum(
             1 for item in self.check_items.values()
-            if item["status_icon"].text() in ["✓", "✗"]
+            if item["status_icon"].text() in ["[OK]", "[FAIL]"]
         )
         progress = int((completed / 5) * 100)
         self.progress_bar.setValue(progress)

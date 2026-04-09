@@ -255,7 +255,7 @@ class UpdateProgressDialog(QDialog):
 
     def on_error(self, error_msg: str):
         """Handle error during update"""
-        self.status_label.setText(f"❌ Update failed: {error_msg}")
+        self.status_label.setText(f"[FAIL] Update failed: {error_msg}")
         self.status_label.setStyleSheet("color: #D32F2F;")
         self.cancel_button.setText("Close")
 

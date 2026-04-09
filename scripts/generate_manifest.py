@@ -147,7 +147,7 @@ def create_split_zips(app_dir: Path, version: str, output_dir: Path = None):
                         zf.write(file_path, arcname=rel_path)
 
         core_size_mb = core_zip_path.stat().st_size / (1024 * 1024)
-        print(f"✓ Created: {core_zip_path} ({core_size_mb:.1f} MB)")
+        print(f"[OK] Created: {core_zip_path} ({core_size_mb:.1f} MB)")
     except Exception as e:
         print(f"✗ Error creating core.zip: {e}")
         return False
@@ -165,7 +165,7 @@ def create_split_zips(app_dir: Path, version: str, output_dir: Path = None):
                     zf.write(file_path, arcname=arc_name)
 
         full_size_mb = full_zip_path.stat().st_size / (1024 * 1024)
-        print(f"✓ Created: {full_zip_path} ({full_size_mb:.1f} MB)")
+        print(f"[OK] Created: {full_zip_path} ({full_size_mb:.1f} MB)")
     except Exception as e:
         print(f"✗ Error creating full.zip: {e}")
         return False
@@ -191,13 +191,13 @@ def main():
     manifest_path = app_dir / "manifest.json"
     with open(manifest_path, 'w', encoding='utf-8') as f:
         json.dump(manifest, f, indent=2)
-    print(f"✓ Manifest saved: {manifest_path}")
+    print(f"[OK] Manifest saved: {manifest_path}")
 
     # ALSO save versioned manifest in PARENT directory (for CI/CD release upload)
     versioned_manifest_path = app_dir.parent / f"manifest-v{version}.json"
     with open(versioned_manifest_path, 'w', encoding='utf-8') as f:
         json.dump(manifest, f, indent=2)
-    print(f"✓ Versioned manifest saved: {versioned_manifest_path}")
+    print(f"[OK] Versioned manifest saved: {versioned_manifest_path}")
 
     print()
     print(f"Summary:")
@@ -225,15 +225,15 @@ def main():
     for f in expected_files:
         if f.exists():
             size_mb = f.stat().st_size / (1024 * 1024)
-            print(f"  ✓ {f.name} ({size_mb:.1f} MB)")
+            print(f"  [OK] {f.name} ({size_mb:.1f} MB)")
         else:
-            print(f"  ✗ MISSING: {f}")
+            print(f"  [FAIL] MISSING: {f}")
             all_ok = False
 
     if all_ok:
-        print("\n✓ All files generated successfully!")
+        print("\n[OK] All files generated successfully!")
     else:
-        print("\n✗ Some files are missing!")
+        print("\n[FAIL] Some files are missing!")
         sys.exit(1)
 
 
