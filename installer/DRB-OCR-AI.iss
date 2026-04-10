@@ -3,7 +3,7 @@
 ; Downloads main application from GitHub Releases during installation
 
 #define MyAppName "DRB-OCR-AI"
-#define MyAppVersion "1.1.0"
+#define MyAppVersion "1.2.0"
 #define MyAppPublisher "AHSO Co., Ltd."
 #define MyAppURL "https://github.com/AHSO-CO-LTD/OCR_DETECTION"
 #define MyAppExeName "DRB-OCR-AI.exe"
@@ -59,9 +59,9 @@ Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{
 Source: "..\LICENSE"; DestDir: "{app}"; Flags: ignoreversion
 
 [Icons]
-Name: "{group}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"
+Name: "{group}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"; WorkingDir: "{app}"
 Name: "{group}\Uninstall {#MyAppName}"; Filename: "{uninstallexe}"
-Name: "{autodesktop}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"; Tasks: desktopicon
+Name: "{autodesktop}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"; WorkingDir: "{app}"; Tasks: desktopicon
 Name: "{group}\GitHub Repository"; Filename: "{#MyAppURL}"
 
 [Run]
